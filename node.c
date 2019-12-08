@@ -118,6 +118,26 @@ char * GET_SERVER_EP_FOR_NODE(int nodeId){
   return val;
 }
 
+int containsData(char * input)
+{
+    int length = strlen(input);
+
+    if(input[length-1]!='|')
+    {
+      return 1;
+    }
+    if(input[length-2]!='|')
+    {
+      return 1;
+    }
+    if(input[length-3]!='|')
+    {
+      return 1;
+    }
+    return 0;
+
+}
+
 PROCESS_THREAD(er_example_server, ev, data)
 {
   static coap_message_t request[1];
@@ -152,7 +172,7 @@ PROCESS_THREAD(er_example_server, ev, data)
       int temperatureRandomNumber = rand()%100;
       int availabilityRandomNumber = rand()%100;
 
-      //new request
+      //new request      
       if(temperatureRandomNumber>TEMPERATURE_GENERATE_THRESHOLD)
       {
         float randomTemperature = (float)(rand()%350)/10;
@@ -164,6 +184,8 @@ PROCESS_THREAD(er_example_server, ev, data)
         toggleEmpty(self);
         LOG_AVAILABILITY(self->isEmpty);
       }
+      
+      
 
       if (dataWaitCount == MAXIMUM_WAIT_TO_SEND || availabilityRandomNumber>AVAILABILITY_GENERATE_THRESHOLD)
       {
@@ -174,45 +196,44 @@ PROCESS_THREAD(er_example_server, ev, data)
           if( nodeCount < MINIMUM_DATA_SEND_COUNT)
           {
               if( nodeCount!=0 || isThereData(self) != 0)
-              {
+              {              
                   output = getOutputString(self,5,node_id);
 
                   resetSelf(self);
                   
 
-                  if(output[0] != NULL)
+                  
+                  if(containsData(output[0])==1)
                   {
                       requestCount = requestCount+1;
                   }
-                  if(output[1] != NULL){
+                  if(containsData(output[1])==1){
                       requestCount = requestCount+1;
                   }
 
                   // Left
-                  char * leftBody = output[0];
-                  if(leftBody != NULL)
+                  if(containsData(output[0])==1)
                   {
-                      LOG_SENT(node_id-1,leftBody);
+                      LOG_SENT(node_id-1,output[0]);
                       char * leftEndPoint = GET_SERVER_EP_FOR_NODE(node_id-1);
                       coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0);
                       coap_set_header_uri_path(request,"/data/send"); 
 
                       coap_endpoint_parse(leftEndPoint, strlen(leftEndPoint), &server_ep);      
-                      coap_set_payload(request, (uint8_t *)leftBody, strlen(leftBody));                 
+                      coap_set_payload(request, (uint8_t *)output[0], strlen(output[0]));                 
                       COAP_BLOCKING_REQUEST(&server_ep, request, client_chunk_handler);
                   }
 
-                  // //Right    
-                  char * rightBody = output[1];           
-                  if(rightBody != NULL){
+                  // //Right        
+                  if(containsData(output[1])==1){
 
-                    LOG_SENT(node_id+1,rightBody);
+                    LOG_SENT(node_id+1,output[1]);
                     char * rightEndPoint = GET_SERVER_EP_FOR_NODE(node_id+1);
                     coap_init_message(request, COAP_TYPE_CON, COAP_POST, 0);
                     coap_set_header_uri_path(request,"/data/send"); 
                     coap_endpoint_parse(rightEndPoint, strlen(rightEndPoint), &server_ep);                        
 
-                    coap_set_payload(request, (uint8_t *)rightBody, strlen(rightBody));
+                    coap_set_payload(request, (uint8_t *)output[1], strlen(output[1]));
                     COAP_BLOCKING_REQUEST(&server_ep, request, client_chunk_handler);
                   }
                   

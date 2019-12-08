@@ -183,6 +183,7 @@ char** getOutputString(struct SelfNodeData * self,int userMaxCount,int nodeId){
     char * leftOutput = returnString[0];
     char * rightOutput = returnString[1];
     struct NodeData* iterator = head;
+    head = seperateNElementsFromLinkedList(head,userMaxCount);
 
     // isEmpty Storeage
     int ** isEmptyStorageLeft = (int **) malloc(sizeof(int * )*2);
@@ -383,6 +384,7 @@ char** getOutputString(struct SelfNodeData * self,int userMaxCount,int nodeId){
             notEmptyStorageRightCount = notEmptyStorageRightCount+1;
         }
     }
+
     if(self->temperatureChanged)
     {
         float avgTemperature = self->totalTemperature/self->totalTemperatureCount;
